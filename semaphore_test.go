@@ -1,39 +1,26 @@
-package semaphore_test
+package semaphore
 
 import (
-	"fmt"
+	"sync"
 	"testing"
-
-	"github.com/jmsleiman/go-semaphore"
+	"time"
 )
 
-func TestSemaphoreCreation(t *testing.T) {
-	sem := semaphore.NewSemaphore(4)
-	sem.Take()
-	sem.Take()
-	sem.Take()
-	sem.Take()
-	sem.Restore()
-	sem.Restore()
-	sem.Restore()
-	sem.Restore()
-}
+func TestSemaphore(t *testing.T) {
+	sem := NewSemaphore()
+	sem.Give(4)
+	sem.Take(4)
 
-func TestMaximumSize(t *testing.T) {
-	const MaxUint = ^uint(0)
-	const MinUint = 0
-	const MaxInt = int(MaxUint >> 1)
-	const MinInt = -MaxInt - 1
-
-	fmt.Println(MaxInt)
-	semaphore.NewSemaphore(2147483647)
-}
-
-func TestResize(t *testing.T) {
-	sem := semaphore.NewSemaphore(4)
-	sem.Resize(-4)
-	sem.Resize(64)
-	sem.Resize(2)
-	sem.Resize(9999999999)
-	sem.Resize(4)
+	var wg0, wg1 sync.WaitGroup
+	wg0.Add(1)
+	wg1.Add(1)
+	go func() {
+		wg1.Wait()
+		sem.Take(2)
+		wg0.Done()
+	}()
+	wg1.Done()
+	time.Sleep(2 * time.Second)
+	sem.Give(2)
+	wg0.Wait()
 }
